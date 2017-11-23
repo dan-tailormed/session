@@ -86,6 +86,8 @@ var defer = typeof setImmediate === 'function'
 function session(options) {
   var opts = options || {}
 
+  var sessionKeyName = opts.sessionKeyName || "session";
+
   // get the cookie options
   var cookieOptions = opts.cookie || {}
 
@@ -156,11 +158,11 @@ function session(options) {
   // generates the new session
   store.generate = function(req){
     req.sessionID = generateId(req);
-    req.session = new Session(req);
-    req.session.cookie = new Cookie(cookieOptions);
+    req[sessionKeyName] = new Session(req);
+    req[sessionKeyName].cookie = new Cookie(cookieOptions);
 
     if (cookieOptions.secure === 'auto') {
-      req.session.cookie.secure = issecure(req, trustProxy);
+      req[sessionKeyName].cookie.secure = issecure(req, trustProxy);
     }
   };
 
@@ -177,9 +179,9 @@ function session(options) {
 
   return function session(req, res, next) {
     // self-awareness
-    if (req.session) {
-      next()
-      return
+    if (req[sessionKeyName]) {
+      next();
+      return;
     }
 
     // Handle connection as if there is no session if
@@ -217,8 +219,8 @@ function session(options) {
 
     // set-cookie
     onHeaders(res, function(){
-      if (!req.session) {
-        debug('no session');
+      if (!req[sessionKeyName]) {
+        debug("no session");
         return;
       }
 
@@ -227,19 +229,19 @@ function session(options) {
       }
 
       // only send secure cookies via https
-      if (req.session.cookie.secure && !issecure(req, trustProxy)) {
+      if (req[sessionKeyName].cookie.secure && !issecure(req, trustProxy)) {
         debug('not secured');
         return;
       }
 
       if (!touched) {
         // touch session
-        req.session.touch()
+        req[sessionKeyName].touch()
         touched = true
       }
 
       // set cookie
-      setcookie(res, name, req.sessionID, secrets[0], req.session.cookie.data);
+      setcookie(res, name, req.sessionID, secrets[0], req[sessionKeyName].cookie.data);
     });
 
     // proxy end() to commit the session
@@ -315,19 +317,19 @@ function session(options) {
       }
 
       // no session to save
-      if (!req.session) {
-        debug('no session');
+      if (!req[sessionKeyName]) {
+        debug("no session");
         return _end.call(res, chunk, encoding);
       }
 
       if (!touched) {
         // touch session
-        req.session.touch()
+        req[sessionKeyName].touch()
         touched = true
       }
 
       if (shouldSave(req)) {
-        req.session.save(function onsave(err) {
+        req[sessionKeyName].save(function onsave(err) {
           if (err) {
             defer(next, err);
           }
@@ -339,14 +341,18 @@ function session(options) {
       } else if (storeImplementsTouch && shouldTouch(req)) {
         // store implements touch method
         debug('touching');
-        store.touch(req.sessionID, req.session, function ontouch(err) {
-          if (err) {
-            defer(next, err);
-          }
+        store.touch(
+          req.sessionID,
+          req[sessionKeyName],
+          function ontouch(err) {
+            if (err) {
+              defer(next, err);
+            }
 
-          debug('touched');
-          writeend();
-        });
+            debug("touched");
+            writeend();
+          }
+        );
 
         return writetop();
       }
@@ -358,8 +364,8 @@ function session(options) {
     function generate() {
       store.generate(req);
       originalId = req.sessionID;
-      originalHash = hash(req.session);
-      wrapmethods(req.session);
+      originalHash = hash(req[sessionKeyName]);
+      wrapmethods(req[sessionKeyName]);
     }
 
     // wrap session methods
@@ -370,7 +376,7 @@ function session(options) {
       function reload(callback) {
         debug('reloading %s', this.id)
         _reload.call(this, function () {
-          wrapmethods(req.session)
+          wrapmethods(req[sessionKeyName]);
           callback.apply(this, arguments)
         })
       }
@@ -408,7 +414,7 @@ function session(options) {
 
     // determine if session should be destroyed
     function shouldDestroy(req) {
-      return req.sessionID && unsetDestroy && req.session == null;
+      return req.sessionID && unsetDestroy && req[sessionKeyName] == null;
     }
 
     // determine if session should be saved to store
@@ -419,9 +425,7 @@ function session(options) {
         return false;
       }
 
-      return !saveUninitializedSession && cookieId !== req.sessionID
-        ? isModified(req.session)
-        : !isSaved(req.session)
+      return !saveUninitializedSession && cookieId !== req.sessionID ? isModified(req[sessionKeyName]) : !isSaved(req[sessionKeyName]);
     }
 
     // determine if session should be touched
@@ -442,9 +446,7 @@ function session(options) {
         return false;
       }
 
-      return cookieId != req.sessionID
-        ? saveUninitializedSession || isModified(req.session)
-        : rollingSessions || req.session.cookie.expires != null && isModified(req.session);
+      return cookieId != req.sessionID ? saveUninitializedSession || isModified(req[sessionKeyName]) : rollingSessions || (req[sessionKeyName].cookie.expires != null && isModified(req[sessionKeyName]));
     }
 
     // generate a session if the browser doesn't send a sessionID
@@ -472,7 +474,7 @@ function session(options) {
       } else if (!sess) {
         debug('no session found');
         generate();
-      // populate req.session
+      // populate req[sessionKeyName]
       } else {
         debug('session found');
         store.createSession(req, sess);
@@ -483,7 +485,7 @@ function session(options) {
           savedHash = originalHash
         }
 
-        wrapmethods(req.session);
+        wrapmethods(req[sessionKeyName]);
       }
 
       next();

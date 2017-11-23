@@ -47,9 +47,9 @@ util.inherits(Store, EventEmitter)
  * @api public
  */
 
-Store.prototype.regenerate = function(req, fn){
+Store.prototype.regenerate = function(req, fn) {
   var self = this;
-  this.destroy(req.sessionID, function(err){
+  this.destroy(req.sessionID, function(err) {
     self.generate(req);
     fn(err);
   });
@@ -64,13 +64,13 @@ Store.prototype.regenerate = function(req, fn){
  * @api public
  */
 
-Store.prototype.load = function(sid, fn){
+Store.prototype.load = function(sid, fn) {
   var self = this;
-  this.get(sid, function(err, sess){
+  this.get(sid, function(err, sess) {
     if (err) return fn(err);
     if (!sess) return fn();
     var req = { sessionID: sid, sessionStore: self };
-    fn(null, self.createSession(req, sess))
+    fn(null, self.createSession(req, sess));
   });
 };
 

@@ -106,7 +106,7 @@ defineMethod(Session.prototype, 'reload', function reload(fn) {
  */
 
 defineMethod(Session.prototype, 'destroy', function destroy(fn) {
-  delete this.req.session;
+  delete this.req[sessionKeyName];
   this.req.sessionStore.destroy(this.id, fn);
   return this;
 });
