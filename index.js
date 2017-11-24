@@ -102,7 +102,7 @@ function session(options) {
   var name = opts.name || opts.key || "connect.sid";
 
   // get the session store
-  var store = opts.store || new MemoryStore();
+  var store = opts.store || new MemoryStore(sessionKeyName);
 
   // get the trust proxy setting
   var trustProxy = opts.proxy;

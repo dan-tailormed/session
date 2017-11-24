@@ -90,9 +90,10 @@ Store.prototype.load = function(sid, fn) {
 Store.prototype.createSession = function(req, sess) {
   var expires = sess.cookie.expires,
     orig = sess.cookie.originalMaxAge;
+  var sessionKeyName = this.sessionKeyName || "session";
   sess.cookie = new Cookie(sess.cookie);
   if ("string" == typeof expires) sess.cookie.expires = new Date(expires);
   sess.cookie.originalMaxAge = orig;
-  req[this.name] = new Session(req, sess);
-  return req[this.name];
+  req[sessionKeyName] = new Session(req, sessionKeyName, sess);
+  return req[sessionKeyName];
 };

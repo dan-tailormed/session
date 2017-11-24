@@ -40,8 +40,8 @@ module.exports = MemoryStore;
  * @public
  */
 
-function MemoryStore() {
-  Store.call(this);
+function MemoryStore(sessionKeyName) {
+  Store.call(this, sessionKeyName);
   this.sessions = Object.create(null);
 }
 
