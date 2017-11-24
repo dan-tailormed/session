@@ -5,14 +5,14 @@
  * MIT Licensed
  */
 
-'use strict';
+"use strict";
 
 /**
  * Module dependencies.
  */
 
-var merge = require('utils-merge')
-  , cookie = require('cookie');
+var merge = require("utils-merge"),
+  cookie = require("cookie");
 
 /**
  * Initialize a new `Cookie` with the given `options`.
@@ -22,22 +22,20 @@ var merge = require('utils-merge')
  * @api private
  */
 
-var Cookie = module.exports = function Cookie(options) {
-  this.path = '/';
+var Cookie = (module.exports = function Cookie(options) {
+  this.path = "/";
   this.maxAge = null;
   this.httpOnly = true;
   if (options) merge(this, options);
-  this.originalMaxAge = undefined == this.originalMaxAge
-    ? this.maxAge
-    : this.originalMaxAge;
-};
+  this.originalMaxAge =
+    undefined == this.originalMaxAge ? this.maxAge : this.originalMaxAge;
+});
 
 /*!
  * Prototype.
  */
 
 Cookie.prototype = {
-
   /**
    * Set expires `date`.
    *
@@ -69,9 +67,7 @@ Cookie.prototype = {
    */
 
   set maxAge(ms) {
-    this.expires = 'number' == typeof ms
-      ? new Date(Date.now() + ms)
-      : ms;
+    this.expires = "number" == typeof ms ? new Date(Date.now() + ms) : ms;
   },
 
   /**
@@ -96,14 +92,14 @@ Cookie.prototype = {
 
   get data() {
     return {
-      originalMaxAge: this.originalMaxAge
-      , expires: this._expires
-      , secure: this.secure
-      , httpOnly: this.httpOnly
-      , domain: this.domain
-      , path: this.path
-      , sameSite: this.sameSite
-    }
+      originalMaxAge: this.originalMaxAge,
+      expires: this._expires,
+      secure: this.secure,
+      httpOnly: this.httpOnly,
+      domain: this.domain,
+      path: this.path,
+      sameSite: this.sameSite
+    };
   },
 
   /**
@@ -113,7 +109,7 @@ Cookie.prototype = {
    * @api public
    */
 
-  serialize: function(name, val){
+  serialize: function(name, val) {
     return cookie.serialize(name, val, this.data);
   },
 
@@ -124,7 +120,7 @@ Cookie.prototype = {
    * @api private
    */
 
-  toJSON: function(){
+  toJSON: function() {
     return this.data;
   }
 };

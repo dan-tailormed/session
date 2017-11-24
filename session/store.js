@@ -5,39 +5,41 @@
  * MIT Licensed
  */
 
-'use strict';
+"use strict";
 
 /**
  * Module dependencies.
  * @private
  */
 
-var Cookie = require('./cookie')
-var EventEmitter = require('events').EventEmitter
-var Session = require('./session')
-var util = require('util')
+var Cookie = require("./cookie");
+var EventEmitter = require("events").EventEmitter;
+var Session = require("./session");
+var util = require("util");
 
 /**
  * Module exports.
  * @public
  */
 
-module.exports = Store
+module.exports = Store;
 
 /**
  * Abstract base class for session stores.
  * @public
  */
 
-function Store () {
-  EventEmitter.call(this)
+function Store(sessionKeyName) {
+  Object.defineProperty(this, "name", { value: sessionKeyName });
+
+  EventEmitter.call(this);
 }
 
 /**
  * Inherit from EventEmitter.
  */
 
-util.inherits(Store, EventEmitter)
+util.inherits(Store, EventEmitter);
 
 /**
  * Re-generate the given requests's session.
@@ -49,7 +51,7 @@ util.inherits(Store, EventEmitter)
 
 Store.prototype.regenerate = function(req, fn) {
   var self = this;
-  this.destroy(req.sessionID, function(err) {
+  this.destroy(req[this.name + "ID"], function(err) {
     self.generate(req);
     fn(err);
   });
@@ -69,7 +71,9 @@ Store.prototype.load = function(sid, fn) {
   this.get(sid, function(err, sess) {
     if (err) return fn(err);
     if (!sess) return fn();
-    var req = { sessionID: sid, sessionStore: self };
+    var req = {};
+    req[this.name + "ID"] = sid;
+    req[this.name + "Store"] = self;
     fn(null, self.createSession(req, sess));
   });
 };
@@ -83,12 +87,12 @@ Store.prototype.load = function(sid, fn) {
  * @api private
  */
 
-Store.prototype.createSession = function(req, sess){
-  var expires = sess.cookie.expires
-    , orig = sess.cookie.originalMaxAge;
+Store.prototype.createSession = function(req, sess) {
+  var expires = sess.cookie.expires,
+    orig = sess.cookie.originalMaxAge;
   sess.cookie = new Cookie(sess.cookie);
-  if ('string' == typeof expires) sess.cookie.expires = new Date(expires);
+  if ("string" == typeof expires) sess.cookie.expires = new Date(expires);
   sess.cookie.originalMaxAge = orig;
-  req.session = new Session(req, sess);
-  return req.session;
+  req[this.name] = new Session(req, sess);
+  return req[this.name];
 };

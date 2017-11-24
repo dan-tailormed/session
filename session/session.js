@@ -5,7 +5,7 @@
  * MIT Licensed
  */
 
-'use strict';
+"use strict";
 
 /**
  * Expose Session.
@@ -21,15 +21,16 @@ module.exports = Session;
  * @api private
  */
 
-function Session(req, data) {
-  Object.defineProperty(this, 'req', { value: req });
-  Object.defineProperty(this, 'id', { value: req.sessionID });
+function Session(req, sessionKeyName, data) {
+  Object.defineProperty(this, "req", { value: req });
+  Object.defineProperty(this, "id", { value: req[sessionKeyName + "ID"] });
+  Object.defineProperty(this, "name", { value: sessionKeyName });
 
-  if (typeof data === 'object' && data !== null) {
+  if (typeof data === "object" && data !== null) {
     // merge data into this, ignoring prototype properties
     for (var prop in data) {
       if (!(prop in this)) {
-        this[prop] = data[prop]
+        this[prop] = data[prop];
       }
     }
   }
@@ -44,7 +45,7 @@ function Session(req, data) {
  * @api public
  */
 
-defineMethod(Session.prototype, 'touch', function touch() {
+defineMethod(Session.prototype, "touch", function touch() {
   return this.resetMaxAge();
 });
 
@@ -55,7 +56,7 @@ defineMethod(Session.prototype, 'touch', function touch() {
  * @api public
  */
 
-defineMethod(Session.prototype, 'resetMaxAge', function resetMaxAge() {
+defineMethod(Session.prototype, "resetMaxAge", function resetMaxAge() {
   this.cookie.maxAge = this.cookie.originalMaxAge;
   return this;
 });
@@ -68,8 +69,8 @@ defineMethod(Session.prototype, 'resetMaxAge', function resetMaxAge() {
  * @api public
  */
 
-defineMethod(Session.prototype, 'save', function save(fn) {
-  this.req.sessionStore.set(this.id, this, fn || function(){});
+defineMethod(Session.prototype, "save", function save(fn) {
+  this.req[this.name + "Store"].set(this.id, this, fn || function() {});
   return this;
 });
 
@@ -85,12 +86,12 @@ defineMethod(Session.prototype, 'save', function save(fn) {
  * @api public
  */
 
-defineMethod(Session.prototype, 'reload', function reload(fn) {
-  var req = this.req
-    , store = this.req.sessionStore;
-  store.get(this.id, function(err, sess){
+defineMethod(Session.prototype, "reload", function reload(fn) {
+  var req = this.req,
+    store = this.req[this.name + "Store"];
+  store.get(this.id, function(err, sess) {
     if (err) return fn(err);
-    if (!sess) return fn(new Error('failed to load session'));
+    if (!sess) return fn(new Error("failed to load session"));
     store.createSession(req, sess);
     fn();
   });
@@ -105,9 +106,9 @@ defineMethod(Session.prototype, 'reload', function reload(fn) {
  * @api public
  */
 
-defineMethod(Session.prototype, 'destroy', function destroy(fn) {
-  delete this.req[sessionKeyName];
-  this.req.sessionStore.destroy(this.id, fn);
+defineMethod(Session.prototype, "destroy", function destroy(fn) {
+  delete this.req[this.name];
+  this.req[this.name + "Store"].destroy(this.id, fn);
   return this;
 });
 
@@ -119,8 +120,8 @@ defineMethod(Session.prototype, 'destroy', function destroy(fn) {
  * @api public
  */
 
-defineMethod(Session.prototype, 'regenerate', function regenerate(fn) {
-  this.req.sessionStore.regenerate(this.req, fn);
+defineMethod(Session.prototype, "regenerate", function regenerate(fn) {
+  this.req[this.name + "Store"].regenerate(this.req, fn);
   return this;
 });
 
@@ -139,4 +140,4 @@ function defineMethod(obj, name, fn) {
     value: fn,
     writable: true
   });
-};
+}
